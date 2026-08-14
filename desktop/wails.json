@@ -1,0 +1,20 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "dsh-desktop",
+  "outputfilename": "dsh-desktop",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "FFaassdfs",
+    "email": "aassdfs@qq.com"
+  },
+  "info": {
+    "companyName": "FFaassdfs",
+    "productName": "DeepSeek Harness",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright © 2026 FFaassdfs",
+    "comments": "DeepSeek Harness desktop shell (Wails v2 + WebView2)"
+  }
+}
