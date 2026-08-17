@@ -109,10 +109,6 @@ func (a *App) waitReady(timeout time.Duration) bool {
 	return false
 }
 
-func (a *App) fail(ctx context.Context, msg string) {
-	runtime.EventsEmit(ctx, "dsh-error", msg)
-}
-
 // failWithLog 在错误信息后追加 harness 日志尾部，便于诊断启动/崩溃问题。
 func (a *App) failWithLog(ctx context.Context, msg string) {
 	if tail := readLogTail(dshLogPath(), 2048); tail != "" {
