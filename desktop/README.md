@@ -16,6 +16,8 @@
 - **错误诊断**：启动失败 / 崩溃时把 `dsh.log` 尾部一并展示
 - **系统通知**：崩溃自愈 / 断连时发原生通知
 - **自动更新 harness**：拉起新实例前自动把 dsh 更新到最新版（可通过配置关闭）
+- **外链处理**：harness UI 里的外部链接用系统浏览器打开，不在桌面壳内跳走
+- **原生菜单**：菜单栏「重新加载 / 打开日志 / 打开配置 / 退出」+ 快捷键
 
 ## 工作原理
 
@@ -63,6 +65,8 @@ desktop/
   config.go          # 运行配置（端口 / 启动命令 / 自动更新）
   update.go          # harness 版本检测与自动更新
   logtail.go         # dsh.log 尾部读取（错误诊断用）
+  links.go           # 外链桥接（外部链接跳系统浏览器）
+  menu.go            # 原生菜单与快捷键
   main.go            # Wails 入口（单实例锁、窗口参数）
   wails.json         # Wails 项目配置（含版本元数据）
   build/             # 图标 / manifest / NSIS 安装器 / macOS plist

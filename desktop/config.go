@@ -33,6 +33,22 @@ func configPath() string {
 	return filepath.Join(dir, "dsh-desktop", "config.json")
 }
 
+// ensureConfigFile 确保配置文件存在；缺失时写入默认值。
+func ensureConfigFile() error {
+	path := configPath()
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	}
+	data, err := json.MarshalIndent(defaultConfig(), "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
+}
+
 func defaultConfig() *DesktopConfig {
 	return &DesktopConfig{Port: defaultPort, Command: defaultCommand, AutoUpdateHarness: true}
 }

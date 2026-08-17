@@ -30,6 +30,7 @@ type App struct {
 	recovering   bool
 	shuttingDown bool
 	healthStop   chan struct{}
+	bridgePort   int
 }
 
 func NewApp() *App {
@@ -40,6 +41,7 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.cfg = loadConfig()
 	_ = runtime.InitializeNotifications(ctx)
+	a.startLinkBridge()
 	a.restoreWindowState(ctx)
 }
 
@@ -85,6 +87,7 @@ func (a *App) bootstrap(ctx context.Context) {
 	a.mu.Unlock()
 	runtime.WindowExecJS(ctx, "window.location.href = '"+a.cfg.URL()+"';")
 	a.startHealthMonitor(ctx)
+	a.startLinkInterceptor(ctx)
 }
 
 func (a *App) portOpen() bool {

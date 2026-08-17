@@ -25,6 +25,7 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
+		Menu:          app.buildMenu(),
 		OnStartup:     app.startup,
 		OnDomReady:    app.domReady,
 		OnBeforeClose: app.captureWindowState,
