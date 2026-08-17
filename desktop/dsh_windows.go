@@ -10,11 +10,7 @@ import (
 )
 
 func (a *App) startDsh() error {
-	logDir, err := os.UserConfigDir()
-	if err != nil {
-		logDir = os.TempDir()
-	}
-	logPath := filepath.Join(logDir, "dsh-desktop", "dsh.log")
+	logPath := dshLogPath()
 	if mkErr := os.MkdirAll(filepath.Dir(logPath), 0o755); mkErr != nil {
 		logPath = os.DevNull
 	}

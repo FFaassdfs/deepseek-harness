@@ -68,13 +68,13 @@ func (a *App) bootstrap(ctx context.Context) {
 	if !a.portOpen() {
 		a.maybeAutoUpdateHarness(ctx)
 		if err := a.startDsh(); err != nil {
-			a.fail(ctx, "无法启动 DeepSeek Harness，请确认已安装：npm i -g @deepseek-ai/dsh\n\n"+err.Error())
+			a.failWithLog(ctx, "无法启动 DeepSeek Harness，请确认已安装：npm i -g @deepseek-ai/dsh\n\n"+err.Error())
 			return
 		}
 		a.owns = true
 	}
 	if !a.waitReady(waitTimeout) {
-		a.fail(ctx, "等待 DeepSeek Harness 启动超时（30 秒）\n\n请检查: "+a.cfg.URL())
+		a.failWithLog(ctx, "等待 DeepSeek Harness 启动超时（30 秒）\n\n请检查: "+a.cfg.URL())
 		return
 	}
 	a.mu.Lock()
@@ -110,6 +110,14 @@ func (a *App) waitReady(timeout time.Duration) bool {
 }
 
 func (a *App) fail(ctx context.Context, msg string) {
+	runtime.EventsEmit(ctx, "dsh-error", msg)
+}
+
+// failWithLog 在错误信息后追加 harness 日志尾部，便于诊断启动/崩溃问题。
+func (a *App) failWithLog(ctx context.Context, msg string) {
+	if tail := readLogTail(dshLogPath(), 2048); tail != "" {
+		msg += "\n\n最近日志:\n" + tail
+	}
 	runtime.EventsEmit(ctx, "dsh-error", msg)
 }
 
@@ -161,11 +169,11 @@ func (a *App) recoverHarness(ctx context.Context) {
 		return
 	}
 	if err := a.startDsh(); err != nil {
-		a.fail(ctx, "harness 已断开，重启失败：\n"+err.Error())
+		a.failWithLog(ctx, "harness 已断开，重启失败：\n"+err.Error())
 		return
 	}
 	if !a.waitReady(waitTimeout) {
-		a.fail(ctx, "harness 重启超时，请重试")
+		a.failWithLog(ctx, "harness 重启超时，请重试")
 		return
 	}
 	runtime.WindowExecJS(ctx, "window.location.href = '"+a.cfg.URL()+"';")
