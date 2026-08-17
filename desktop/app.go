@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	dshURL       = "http://127.0.0.1:3080"
 	waitTimeout  = 30 * time.Second
 	pollInterval = 300 * time.Millisecond
 )
@@ -21,6 +20,7 @@ const (
 type App struct {
 	ctx     context.Context
 	winCtx  context.Context
+	cfg     *DesktopConfig
 	cmd     *exec.Cmd
 	owns    bool
 	mu      sync.Mutex
@@ -34,6 +34,7 @@ func NewApp() *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.cfg = loadConfig()
 	a.restoreWindowState(ctx)
 }
 
@@ -68,17 +69,17 @@ func (a *App) bootstrap(ctx context.Context) {
 		a.owns = true
 	}
 	if !a.waitReady(waitTimeout) {
-		a.fail(ctx, "等待 DeepSeek Harness 启动超时（30 秒）\n\n请检查: "+dshURL)
+		a.fail(ctx, "等待 DeepSeek Harness 启动超时（30 秒）\n\n请检查: "+a.cfg.URL())
 		return
 	}
 	a.mu.Lock()
 	a.booted = true
 	a.mu.Unlock()
-	runtime.WindowExecJS(ctx, "window.location.href = '"+dshURL+"';")
+	runtime.WindowExecJS(ctx, "window.location.href = '"+a.cfg.URL()+"';")
 }
 
 func (a *App) portOpen() bool {
-	conn, err := net.DialTimeout("tcp", "127.0.0.1:3080", 800*time.Millisecond)
+	conn, err := net.DialTimeout("tcp", a.cfg.addr(), 800*time.Millisecond)
 	if err != nil {
 		return false
 	}
@@ -90,7 +91,7 @@ func (a *App) waitReady(timeout time.Duration) bool {
 	deadline := time.Now().Add(timeout)
 	client := &http.Client{Timeout: 2 * time.Second}
 	for time.Now().Before(deadline) {
-		resp, err := client.Get(dshURL)
+		resp, err := client.Get(a.cfg.URL())
 		if err == nil {
 			resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {

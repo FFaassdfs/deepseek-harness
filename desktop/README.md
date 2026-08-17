@@ -63,6 +63,7 @@ desktop/
 
 ## 配置
 
+- 运行配置保存在 `%APPDATA%\dsh-desktop\config.json`：`port`（默认 3080）、`command`（默认 `dsh web`，可为 `pnpm dsh web` 等），缺失时用默认值
 - 窗口状态保存在 `%APPDATA%\dsh-desktop\window.json`，关闭前写入（`OnBeforeClose`）、启动时还原（`OnStartup`）
 - dsh 运行日志保存在 `%APPDATA%\dsh-desktop\dsh.log`
 

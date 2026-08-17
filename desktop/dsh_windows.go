@@ -23,7 +23,7 @@ func (a *App) startDsh() error {
 		logFile = nil
 	}
 
-	cmd := exec.Command("cmd", "/C", "dsh", "web")
+	cmd := exec.Command("cmd", "/C", a.cfg.Command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		CreationFlags: 0x08000000 | 0x00000008,
 	}
