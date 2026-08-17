@@ -1,0 +1,51 @@
+name: sync-upstream
+
+# 时刻对齐官方 deepseek-ai/deepseek-harness：
+# 定时 / 手动触发时，把官方 master 的新提交合并进本 fork 的 master 并推送。
+# 桌面代码全部位于独立的 desktop/ 目录，与官方 packages/、apps/ 永不冲突，
+# 因此 merge 通常无冲突；若出现冲突（如官方也新增了 desktop/），工作流会失败并在 Actions 里可见，需手动处理。
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # 每小时一次（UTC），可按需调整
+  workflow_dispatch:       # 支持手动触发
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Sync upstream master
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git
+          git fetch upstream master
+          if ($LASTEXITCODE -ne 0) { throw "fetch upstream failed" }
+
+          git merge-base --is-ancestor upstream/master master
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "==> 已同步：官方无新提交 (upstream/master = $(git rev-parse --short upstream/master))"
+            exit 0
+          }
+
+          Write-Host "==> 发现官方新提交，合并 upstream/master 到 master ..."
+          git merge upstream/master --no-edit
+          if ($LASTEXITCODE -ne 0) { throw "merge failed (conflict?) - resolve manually" }
+
+          Write-Host "==> 推送到 origin master ..."
+          git push origin master
+          if ($LASTEXITCODE -ne 0) { throw "push failed" }
