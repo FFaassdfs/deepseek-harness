@@ -9,6 +9,8 @@ func (a *App) startDsh() error {
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+	a.mu.Lock()
 	a.cmd = cmd
+	a.mu.Unlock()
 	return nil
 }

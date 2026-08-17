@@ -72,7 +72,9 @@ func (a *App) bootstrap(ctx context.Context) {
 			a.failWithLog(ctx, "无法启动 DeepSeek Harness，请确认已安装：npm i -g @deepseek-ai/dsh\n\n"+err.Error())
 			return
 		}
+		a.mu.Lock()
 		a.owns = true
+		a.mu.Unlock()
 	}
 	if !a.waitReady(waitTimeout) {
 		a.failWithLog(ctx, "等待 DeepSeek Harness 启动超时（30 秒）\n\n请检查: "+a.cfg.URL())
@@ -189,7 +191,10 @@ func (a *App) recoverHarness(ctx context.Context) {
 
 func (a *App) shutdown(ctx context.Context) {
 	close(a.healthStop)
-	if a.owns && a.cmd != nil && a.cmd.Process != nil {
-		exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(a.cmd.Process.Pid)).Run()
+	a.mu.Lock()
+	owns, cmd := a.owns, a.cmd
+	a.mu.Unlock()
+	if owns && cmd != nil && cmd.Process != nil {
+		exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(cmd.Process.Pid)).Run()
 	}
 }

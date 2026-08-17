@@ -33,6 +33,8 @@ func (a *App) startDsh() error {
 	if logFile != nil {
 		logFile.Close()
 	}
+	a.mu.Lock()
 	a.cmd = cmd
+	a.mu.Unlock()
 	return nil
 }
