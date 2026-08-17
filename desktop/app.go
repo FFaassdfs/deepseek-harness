@@ -13,23 +13,27 @@ import (
 )
 
 const (
-	waitTimeout  = 30 * time.Second
-	pollInterval = 300 * time.Millisecond
+	waitTimeout         = 30 * time.Second
+	pollInterval        = 300 * time.Millisecond
+	healthCheckInterval = 5 * time.Second
 )
 
 type App struct {
-	ctx     context.Context
-	winCtx  context.Context
-	cfg     *DesktopConfig
-	cmd     *exec.Cmd
-	owns    bool
-	mu      sync.Mutex
-	booting bool
-	booted  bool
+	ctx          context.Context
+	winCtx       context.Context
+	cfg          *DesktopConfig
+	cmd          *exec.Cmd
+	owns         bool
+	mu           sync.Mutex
+	booting      bool
+	booted       bool
+	recovering   bool
+	shuttingDown bool
+	healthStop   chan struct{}
 }
 
 func NewApp() *App {
-	return &App{}
+	return &App{healthStop: make(chan struct{})}
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -77,6 +81,7 @@ func (a *App) bootstrap(ctx context.Context) {
 	a.booted = true
 	a.mu.Unlock()
 	runtime.WindowExecJS(ctx, "window.location.href = '"+a.cfg.URL()+"';")
+	a.startHealthMonitor(ctx)
 }
 
 func (a *App) portOpen() bool {
@@ -114,7 +119,60 @@ func (a *App) Retry() {
 	}
 }
 
+// startHealthMonitor 在启动成功后监测 harness 存活；掉线时自动重启（仅限自拉起的实例）。
+func (a *App) startHealthMonitor(ctx context.Context) {
+	go func() {
+		ticker := time.NewTicker(healthCheckInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-a.healthStop:
+				return
+			case <-ticker.C:
+				if !a.portOpen() {
+					a.recoverHarness(ctx)
+				}
+			}
+		}
+	}()
+}
+
+// recoverHarness 检测到端口掉线后，尝试重启自拉起的 harness 并重连。
+func (a *App) recoverHarness(ctx context.Context) {
+	a.mu.Lock()
+	if a.shuttingDown || a.recovering || !a.owns {
+		a.mu.Unlock()
+		if !a.owns && !a.shuttingDown {
+			runtime.EventsEmit(ctx, "dsh-disconnected", "harness 连接已断开")
+		}
+		return
+	}
+	a.recovering = true
+	a.mu.Unlock()
+	defer func() {
+		a.mu.Lock()
+		a.recovering = false
+		a.mu.Unlock()
+	}()
+
+	// 瞬时抖动缓冲，避免把「慢响应」误判成崩溃
+	time.Sleep(2 * time.Second)
+	if a.portOpen() {
+		return
+	}
+	if err := a.startDsh(); err != nil {
+		a.fail(ctx, "harness 已断开，重启失败：\n"+err.Error())
+		return
+	}
+	if !a.waitReady(waitTimeout) {
+		a.fail(ctx, "harness 重启超时，请重试")
+		return
+	}
+	runtime.WindowExecJS(ctx, "window.location.href = '"+a.cfg.URL()+"';")
+}
+
 func (a *App) shutdown(ctx context.Context) {
+	close(a.healthStop)
 	if a.owns && a.cmd != nil && a.cmd.Process != nil {
 		exec.Command("taskkill", "/F", "/T", "/PID", strconv.Itoa(a.cmd.Process.Pid)).Run()
 	}

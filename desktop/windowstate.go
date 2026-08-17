@@ -84,6 +84,9 @@ func (a *App) restoreWindowState(ctx context.Context) {
 // captureWindowState 作为 OnBeforeClose 回调：在窗口关闭前保存状态。
 // 返回 false 表示不阻止关闭。
 func (a *App) captureWindowState(ctx context.Context) bool {
+	a.mu.Lock()
+	a.shuttingDown = true
+	a.mu.Unlock()
 	w, h := runtime.WindowGetSize(ctx)
 	x, y := runtime.WindowGetPosition(ctx)
 	isMax := runtime.WindowIsMaximised(ctx)
