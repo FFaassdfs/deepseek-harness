@@ -39,6 +39,7 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.cfg = loadConfig()
+	_ = runtime.InitializeNotifications(ctx)
 	a.restoreWindowState(ctx)
 }
 
@@ -117,6 +118,15 @@ func (a *App) failWithLog(ctx context.Context, msg string) {
 	runtime.EventsEmit(ctx, "dsh-error", msg)
 }
 
+// notify 发送原生系统通知（失败静默忽略）。
+func notify(ctx context.Context, id, title, body string) {
+	_ = runtime.SendNotification(ctx, runtime.NotificationOptions{
+		ID:    id,
+		Title: title,
+		Body:  body,
+	})
+}
+
 func (a *App) Retry() {
 	if a.winCtx != nil {
 		a.startBootstrap(a.winCtx)
@@ -148,6 +158,7 @@ func (a *App) recoverHarness(ctx context.Context) {
 		a.mu.Unlock()
 		if !a.owns && !a.shuttingDown {
 			runtime.EventsEmit(ctx, "dsh-disconnected", "harness 连接已断开")
+			notify(ctx, "dsh-disconnected", "DeepSeek Harness", "harness 连接已断开")
 		}
 		return
 	}
@@ -173,6 +184,7 @@ func (a *App) recoverHarness(ctx context.Context) {
 		return
 	}
 	runtime.WindowExecJS(ctx, "window.location.href = '"+a.cfg.URL()+"';")
+	notify(ctx, "dsh-restarted", "DeepSeek Harness", "harness 已崩溃并自动重启")
 }
 
 func (a *App) shutdown(ctx context.Context) {
