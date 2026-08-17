@@ -19,6 +19,8 @@ type DesktopConfig struct {
 	Port int `json:"port"`
 	// Command 是拉起 harness Web UI 的命令，默认 "dsh web"；支持带空格的 shell 命令（如 "pnpm dsh web"）。
 	Command string `json:"command"`
+	// AutoUpdateHarness 是否在拉起新实例前自动把全局 dsh 更新到最新版，默认 true。
+	AutoUpdateHarness bool `json:"autoUpdateHarness"`
 }
 
 func configPath() string {
@@ -30,10 +32,11 @@ func configPath() string {
 }
 
 func defaultConfig() *DesktopConfig {
-	return &DesktopConfig{Port: defaultPort, Command: defaultCommand}
+	return &DesktopConfig{Port: defaultPort, Command: defaultCommand, AutoUpdateHarness: true}
 }
 
 // loadConfigFrom 从指定路径加载配置；文件缺失时返回默认值。
+// 用指针区分「字段缺失」（回落默认）与「显式设值」（含显式 false）。
 func loadConfigFrom(path string) (*DesktopConfig, error) {
 	cfg := defaultConfig()
 	data, err := os.ReadFile(path)
@@ -43,15 +46,22 @@ func loadConfigFrom(path string) (*DesktopConfig, error) {
 		}
 		return nil, err
 	}
-	var c DesktopConfig
-	if err := json.Unmarshal(data, &c); err != nil {
+	var raw struct {
+		Port              *int    `json:"port"`
+		Command           *string `json:"command"`
+		AutoUpdateHarness *bool   `json:"autoUpdateHarness"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, err
 	}
-	if c.Port > 0 {
-		cfg.Port = c.Port
+	if raw.Port != nil && *raw.Port > 0 {
+		cfg.Port = *raw.Port
 	}
-	if c.Command != "" {
-		cfg.Command = c.Command
+	if raw.Command != nil && *raw.Command != "" {
+		cfg.Command = *raw.Command
+	}
+	if raw.AutoUpdateHarness != nil {
+		cfg.AutoUpdateHarness = *raw.AutoUpdateHarness
 	}
 	return cfg, nil
 }

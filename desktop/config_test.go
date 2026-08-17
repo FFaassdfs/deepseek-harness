@@ -11,11 +11,25 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loadConfigFrom: %v", err)
 	}
-	if cfg.Port != 3080 || cfg.Command != "dsh web" {
+	if cfg.Port != 3080 || cfg.Command != "dsh web" || !cfg.AutoUpdateHarness {
 		t.Fatalf("unexpected defaults: %+v", cfg)
 	}
 	if got := cfg.URL(); got != "http://127.0.0.1:3080" {
 		t.Fatalf("unexpected URL: %q", got)
+	}
+}
+
+func TestLoadConfigAutoUpdateFalse(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(path, []byte(`{"autoUpdateHarness": false}`), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	cfg, err := loadConfigFrom(path)
+	if err != nil {
+		t.Fatalf("loadConfigFrom: %v", err)
+	}
+	if cfg.AutoUpdateHarness {
+		t.Fatal("expected autoUpdateHarness=false, got true")
 	}
 }
 

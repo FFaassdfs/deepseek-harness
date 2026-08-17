@@ -62,6 +62,7 @@ func (a *App) bootstrap(ctx context.Context) {
 	}()
 
 	if !a.portOpen() {
+		a.maybeAutoUpdateHarness(ctx)
 		if err := a.startDsh(); err != nil {
 			a.fail(ctx, "无法启动 DeepSeek Harness，请确认已安装：npm i -g @deepseek-ai/dsh\n\n"+err.Error())
 			return
