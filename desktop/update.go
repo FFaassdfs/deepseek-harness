@@ -90,6 +90,7 @@ func (a *App) maybeAutoUpdateHarness(ctx context.Context) {
 		return
 	}
 	log.Printf("harness update: %s -> %s", info.Current, info.Latest)
+	runtime.EventsEmit(ctx, "dsh-updating", info)
 	if err := updateHarness(); err != nil {
 		log.Printf("harness update failed: %v", err)
 		return

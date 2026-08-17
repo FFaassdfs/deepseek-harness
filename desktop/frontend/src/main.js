@@ -18,6 +18,16 @@ EventsOn('dsh-error', (msg) => {
     if (retry) retry.classList.remove('hidden');
 });
 
+EventsOn('dsh-updating', (info) => {
+    const status = document.getElementById('status');
+    if (status) status.textContent = `正在更新 harness 到 ${info.latest}...`;
+});
+
+EventsOn('dsh-update', (info) => {
+    const status = document.getElementById('status');
+    if (status) status.textContent = `已更新到 ${info.latest}，正在启动...`;
+});
+
 document.getElementById('retry').addEventListener('click', () => {
     const spinner = document.getElementById('spinner');
     const status = document.getElementById('status');
