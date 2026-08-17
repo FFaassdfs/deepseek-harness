@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
 
 func TestVersionLess(t *testing.T) {
 	cases := []struct {
@@ -43,5 +48,28 @@ func TestNormalizeVersion(t *testing.T) {
 		if got := normalizeVersion(in); got != want {
 			t.Errorf("normalizeVersion(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestShouldCheckUpdate(t *testing.T) {
+	// 缺失 → true
+	if !shouldCheckUpdate(filepath.Join(t.TempDir(), "nope")) {
+		t.Fatal("missing marker should return true")
+	}
+	// 新建（新鲜 mtime）→ false
+	path := filepath.Join(t.TempDir(), ".update-check")
+	if err := markUpdateChecked(path); err != nil {
+		t.Fatalf("mark: %v", err)
+	}
+	if shouldCheckUpdate(path) {
+		t.Fatal("fresh marker should return false")
+	}
+	// 把 mtime 拨到 25 小时前 → true
+	old := time.Now().Add(-25 * time.Hour)
+	if err := os.Chtimes(path, old, old); err != nil {
+		t.Fatalf("chtimes: %v", err)
+	}
+	if !shouldCheckUpdate(path) {
+		t.Fatal("stale marker should return true")
 	}
 }

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	goruntime "runtime"
 	"strings"
 	"time"
@@ -12,7 +14,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-const harnessPackage = "@deepseek-ai/dsh"
+const (
+	harnessPackage      = "@deepseek-ai/dsh"
+	updateCheckInterval = 24 * time.Hour
+)
 
 // UpdateInfo 描述 harness 的更新状态。
 type UpdateInfo struct {
@@ -75,10 +80,40 @@ func updateHarness() error {
 	return err
 }
 
+// updateCheckPath 返回更新检查标记文件路径。
+func updateCheckPath() string {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		dir = os.TempDir()
+	}
+	return filepath.Join(dir, "dsh-desktop", ".update-check")
+}
+
+// shouldCheckUpdate 依据标记文件 mtime 判断是否需要重新检查更新；文件缺失返回 true。
+func shouldCheckUpdate(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return true
+	}
+	return time.Since(info.ModTime()) > updateCheckInterval
+}
+
+// markUpdateChecked 写入/刷新更新检查标记文件。
+func markUpdateChecked(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(time.Now().Format(time.RFC3339)), 0o644)
+}
+
 // maybeAutoUpdateHarness 在拉起新实例前自动更新 harness（如启用且存在新版）。
 // 任何错误都只记录日志、不阻塞启动。
 func (a *App) maybeAutoUpdateHarness(ctx context.Context) {
 	if !a.cfg.AutoUpdateHarness {
+		return
+	}
+	checkPath := updateCheckPath()
+	if !shouldCheckUpdate(checkPath) {
 		return
 	}
 	info, err := checkHarnessUpdate()
@@ -86,6 +121,8 @@ func (a *App) maybeAutoUpdateHarness(ctx context.Context) {
 		log.Printf("harness update check failed: %v", err)
 		return
 	}
+	// 检查成功才刷新标记；失败（如断网）则下次再试
+	_ = markUpdateChecked(checkPath)
 	if !info.UpdateAvailable {
 		return
 	}
