@@ -21,6 +21,8 @@ type DesktopConfig struct {
 	Command string `json:"command"`
 	// AutoUpdateHarness 是否在拉起新实例前自动把全局 dsh 更新到最新版，默认 true。
 	AutoUpdateHarness bool `json:"autoUpdateHarness"`
+	// WorkDir 是拉起 harness 进程时的工作目录（用于定位 .env / cordis 配置），默认空=继承桌面壳自身目录。
+	WorkDir string `json:"workdir"`
 }
 
 func configPath() string {
@@ -50,6 +52,7 @@ func loadConfigFrom(path string) (*DesktopConfig, error) {
 		Port              *int    `json:"port"`
 		Command           *string `json:"command"`
 		AutoUpdateHarness *bool   `json:"autoUpdateHarness"`
+		WorkDir           *string `json:"workdir"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, err
@@ -62,6 +65,9 @@ func loadConfigFrom(path string) (*DesktopConfig, error) {
 	}
 	if raw.AutoUpdateHarness != nil {
 		cfg.AutoUpdateHarness = *raw.AutoUpdateHarness
+	}
+	if raw.WorkDir != nil {
+		cfg.WorkDir = *raw.WorkDir
 	}
 	return cfg, nil
 }

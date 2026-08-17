@@ -33,6 +33,20 @@ func TestLoadConfigAutoUpdateFalse(t *testing.T) {
 	}
 }
 
+func TestLoadConfigWorkDir(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(path, []byte(`{"workdir": "D:/dev/deepseek-harness"}`), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	cfg, err := loadConfigFrom(path)
+	if err != nil {
+		t.Fatalf("loadConfigFrom: %v", err)
+	}
+	if cfg.WorkDir != "D:/dev/deepseek-harness" {
+		t.Fatalf("unexpected workdir: %q", cfg.WorkDir)
+	}
+}
+
 func TestLoadConfigOverrides(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
 	if err := os.WriteFile(path, []byte(`{"port": 3999, "command": "pnpm dsh web"}`), 0o644); err != nil {

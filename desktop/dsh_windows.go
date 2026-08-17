@@ -20,6 +20,9 @@ func (a *App) startDsh() error {
 	}
 
 	cmd := exec.Command("cmd", "/C", a.cfg.Command)
+	if a.cfg.WorkDir != "" {
+		cmd.Dir = a.cfg.WorkDir
+	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		CreationFlags: 0x08000000 | 0x00000008,
 	}
