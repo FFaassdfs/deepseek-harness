@@ -11,6 +11,11 @@
 - **窗口状态记忆**：记住上次窗口大小 / 位置 / 最大化状态，重启自动还原
 - **单实例**：重复启动时聚焦已有窗口，不重复拉起
 - **启动画面**：内嵌 loading 页，失败时显示原因并可一键重试
+- **运行配置**：`config.json` 可配端口 / 启动命令 / 是否自动更新
+- **崩溃自愈**：运行中 harness 掉线自动重启并重连；复用外部实例时仅提示
+- **错误诊断**：启动失败 / 崩溃时把 `dsh.log` 尾部一并展示
+- **系统通知**：崩溃自愈 / 断连时发原生通知
+- **自动更新 harness**：拉起新实例前自动把 dsh 更新到最新版（可通过配置关闭）
 
 ## 工作原理
 
@@ -55,6 +60,9 @@ desktop/
   dsh_windows.go     # Windows 平台 spawn dsh（隐藏窗口 + 日志重定向）
   dsh_other.go       # 其他平台 spawn dsh
   windowstate.go     # 窗口状态持久化（大小/位置/最大化）
+  config.go          # 运行配置（端口 / 启动命令 / 自动更新）
+  update.go          # harness 版本检测与自动更新
+  logtail.go         # dsh.log 尾部读取（错误诊断用）
   main.go            # Wails 入口（单实例锁、窗口参数）
   wails.json         # Wails 项目配置（含版本元数据）
   build/             # 图标 / manifest / NSIS 安装器 / macOS plist
