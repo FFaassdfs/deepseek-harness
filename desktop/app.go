@@ -68,6 +68,9 @@ func (a *App) bootstrap(ctx context.Context) {
 		a.mu.Unlock()
 	}()
 
+	// 尽早异步获取核心版本写入窗口标题（dsh --version，失败静默，不阻塞启动）
+	go a.applyHarnessTitle(ctx)
+
 	if !a.portOpen() {
 		a.maybeAutoUpdateHarness(ctx)
 		if err := a.startDsh(); err != nil {

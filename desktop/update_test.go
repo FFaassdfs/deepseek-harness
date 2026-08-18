@@ -51,6 +51,20 @@ func TestNormalizeVersion(t *testing.T) {
 	}
 }
 
+func TestWindowTitleFor(t *testing.T) {
+	cases := map[string]string{
+		"":            "DeepSeek Harness",
+		"0.1.0-rc.6":  "DeepSeek Harness v0.1.0-rc.6",
+		"1.2.3":       "DeepSeek Harness v1.2.3",
+		"0.1.0-rc.10": "DeepSeek Harness v0.1.0-rc.10",
+	}
+	for in, want := range cases {
+		if got := windowTitleFor(in); got != want {
+			t.Errorf("windowTitleFor(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestShouldCheckUpdate(t *testing.T) {
 	// 缺失 → true
 	if !shouldCheckUpdate(filepath.Join(t.TempDir(), "nope")) {

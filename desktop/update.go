@@ -136,6 +136,22 @@ func (a *App) maybeAutoUpdateHarness(ctx context.Context) {
 	runtime.EventsEmit(ctx, "dsh-update", info)
 }
 
+// applyHarnessTitle 把窗口标题设为 "DeepSeek Harness v<core>"（如 v0.1.0-rc.6）。
+// 版本获取失败时静默保持原标题；跳转 Web UI 后标题可能被页面 document.title 覆盖，属预期。
+func (a *App) applyHarnessTitle(ctx context.Context) {
+	if v, err := installedHarnessVersion(); err == nil && v != "" {
+		runtime.WindowSetTitle(ctx, windowTitleFor(v))
+	}
+}
+
+// windowTitleFor 生成带核心版本的窗口标题；版本为空时保持基础标题。
+func windowTitleFor(version string) string {
+	if version == "" {
+		return "DeepSeek Harness"
+	}
+	return "DeepSeek Harness v" + version
+}
+
 // normalizeVersion 清理版本串：去空格 / 去 "v" 前缀 / 去命令前缀。
 func normalizeVersion(s string) string {
 	s = strings.TrimSpace(s)
