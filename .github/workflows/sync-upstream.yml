@@ -8,7 +8,7 @@ name: sync-upstream
 
 on:
   schedule:
-    - cron: '0 * * * *'   # 每小时一次（UTC），可按需调整
+    - cron: '0 0 * * *'   # 每天早上 8 点（北京时间 = UTC 00:00），可按需调整
   workflow_dispatch:       # 支持手动触发
 
 permissions:
