@@ -2,8 +2,9 @@ name: sync-upstream
 
 # 时刻对齐官方 deepseek-ai/deepseek-harness：
 # 定时 / 手动触发时，把官方 master 的新提交合并进本 fork 的 master 并推送。
-# 桌面代码全部位于独立的 desktop/ 目录，与官方 packages/、apps/ 永不冲突，
-# 因此 merge 通常无冲突；若出现冲突（如官方也新增了 desktop/），工作流会失败并在 Actions 里可见，需手动处理。
+# 桌面代码全部位于独立的 desktop/ 目录，与官方 packages/、apps/ 永不冲突。
+# 推送必须用仓库 secret `SYNC_TOKEN`（PAT，需 repo + workflow scope），
+# 因为内置 GITHUB_TOKEN 无法推送 workflow 文件（官方安全限制）。
 
 on:
   schedule:
@@ -12,7 +13,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 concurrency:
   group: sync-upstream
@@ -27,6 +27,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
+          token: ${{ secrets.SYNC_TOKEN }}
 
       - name: Sync upstream master
         shell: pwsh
